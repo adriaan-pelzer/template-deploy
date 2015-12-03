@@ -5,7 +5,6 @@ var R = require ( 'ramda' );
 var P = require ( 'path' );
 var F = require ( 'fs' );
 var rr = require ( 'recursive-readdir' );
-var B = require ( 'handlebars' );
 var G = require ( 'glob' );
 var Q = require ( 'request' );
 var I = require ( 'inspect-log' );
@@ -25,64 +24,19 @@ var usage = function ( msg ) {
     console.log ( 'Usage: template-deploy <type> <version> <context>' );
     process.exit ( 1 );
 }
+var B = {
+    compile: R.curry ( function ( template, data ) {
+        return R.reduce ( function ( template, keyValuePair ) {
+            var key = keyValuePair[0], value = keyValuePair[1], re = new RegExp ( '{{' + key + '}}', 'g' );
 
-B.registerHelper ( 'markdown', function ( md, options ) {
-    if ( md ) {
-        return M.toHTML ( md );
-    }
-} );
+            if ( R.type ( value ) !== 'String' && R.type ( value ) !== 'Number' ) {
+                return template;
+            }
 
-B.registerHelper ( 'and', function ( a, b, options ) {
-    if ( a && b ) {
-      return options.fn ( this );
-    } else {
-      return options.inverse ( this );
-    }
-} );
-
-B.registerHelper ( 'or', function ( a, b, options ) {
-    if ( a || b ) {
-        return options.fn ( this );
-    } else {
-        return options.inverse ( this );
-    }
-} );
-
-B.registerHelper ( 'compare', function ( left, operator, right, options ) {
-    if ( arguments.length < 3 ) {
-       throw new Error ( 'Handlerbars Helper "compare" needs 2 parameters' );
-    }
-
-    if ( options === undefined ) {
-       options = right;
-       right = operator;
-       operator = '===';
-    }
-
-    var operators = {
-       '==':     function ( l, r ) { return l == r; },
-       '===':    function ( l, r ) { return l === r; },
-       '!=':     function ( l, r ) { return l != r; },
-       '!==':    function ( l, r ) { return l !== r; },
-       '<':      function ( l, r ) { return l < r; },
-       '>':      function ( l, r ) { return l > r; },
-       '<=':     function ( l, r ) { return l <= r; },
-       '>=':     function ( l, r ) { return l >= r; },
-       'typeof': function ( l, r ) { return typeof l == r; }
-    };
-
-    if ( !operators[operator] ) {
-      throw new Error ( 'Handlerbars Helper "compare" doesn\'t know the operator ' + operator );
-    }
-
-    var result = operators[operator] ( left, right );
-
-    if ( result ) {
-      return options.fn ( this );
-    } else {
-      return options.inverse ( this );
-    }
-} );
+            return R.replace ( re, value, template );
+        }, template, R.toPairs ( data ) );
+    } )
+};
 
 H ( [ P.resolve ( './templateConf.js' ) ] )
     .flatMap ( function ( configFile ) {
