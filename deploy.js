@@ -21,9 +21,10 @@ var errorIf = function ( pred, error ) {
 
 var usage = function ( msg ) {
     console.log ( msg );
-    console.log ( 'Usage: template-deploy <type> <version> <context>' );
+    console.log ( 'Usage: template-deploy <environment> <id_token>' );
     process.exit ( 1 );
-}
+};
+
 var B = {
     compile: R.curry ( function ( template, data ) {
         return R.reduce ( function ( template, keyValuePair ) {
@@ -37,6 +38,10 @@ var B = {
         }, template, R.toPairs ( data ) );
     } )
 };
+
+if ( process.argv.length < 4 ) {
+    usage ( 'too few arguments' );
+}
 
 H ( [ P.resolve ( './templateConf.js' ) ] )
     .flatMap ( function ( configFile ) {
@@ -53,7 +58,7 @@ H ( [ P.resolve ( './templateConf.js' ) ] )
             .map ( R.always ( configFile ) );
     } )
     .map ( require )
-    .map ( R.ifElse ( R.always ( R.isNil ( process.argv[2] ) ), R.identity, R.prop ( process.argv[2] ) ) )
+    .map ( R.prop ( process.argv[2] ) )
     .flatMap ( function ( config ) {
         return H ( [ P.resolve ( './' ) ] )
             .flatMap ( H.wrapCallback ( function ( path, callBack ) {
@@ -91,13 +96,13 @@ H ( [ P.resolve ( './templateConf.js' ) ] )
                             .map ( R.head )
                             .map ( function ( template ) {
                                 return {
-                                    url: config.apiUrl + '/templates/' + template.id,
+                                    url: config.apiUrl + '/templates/' + template.id + '?id_token=' + process.argv[3],
                                     method: 'put',
                                     json: templateParms ( parms )
                                 };
                             } )
                             .otherwise ( H ( [ {
-                                url: config.apiUrl + '/templates',
+                                url: config.apiUrl + '/templates' + '?id_token=' + process.argv[3],
                                 method: 'post',
                                 json: templateParms ( parms )
                             } ] ) )
