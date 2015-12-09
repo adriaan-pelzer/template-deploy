@@ -135,8 +135,6 @@ H ( [ P.resolve ( './templateConf.js' ) ] )
                                             data
                                         ].join ( '' );
 
-                                        I ( stringToSign );
-
                                         s.update ( new Buffer ( stringToSign ) );
                                          
                                         return R.merge ( R.omit ( [ 'url', 'json' ], queryParms ), {
