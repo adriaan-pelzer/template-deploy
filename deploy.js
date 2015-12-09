@@ -8,6 +8,7 @@ var rr = require ( 'recursive-readdir' );
 var G = require ( 'glob' );
 var Q = require ( 'request' );
 var I = require ( 'inspect-log' );
+var c = require ( 'crypto' );
 
 var errorIf = function ( pred, error ) {
     return H.wrapCallback ( function ( input, callBack ) {
@@ -21,7 +22,7 @@ var errorIf = function ( pred, error ) {
 
 var usage = function ( msg ) {
     console.log ( msg );
-    console.log ( 'Usage: template-deploy <environment> <id_token>' );
+    console.log ( 'Usage: template-deploy <environment>' );
     process.exit ( 1 );
 };
 
@@ -39,7 +40,7 @@ var B = {
     } )
 };
 
-if ( process.argv.length < 4 ) {
+if ( process.argv.length < 3 ) {
     usage ( 'too few arguments' );
 }
 
@@ -96,13 +97,13 @@ H ( [ P.resolve ( './templateConf.js' ) ] )
                             .map ( R.head )
                             .map ( function ( template ) {
                                 return {
-                                    url: config.apiUrl + '/templates/' + template.id + '?id_token=' + process.argv[3],
+                                    url: config.apiUrl + '/templates/' + template.id,
                                     method: 'put',
                                     json: templateParms ( parms )
                                 };
                             } )
                             .otherwise ( H ( [ {
-                                url: config.apiUrl + '/templates' + '?id_token=' + process.argv[3],
+                                url: config.apiUrl + '/templates',
                                 method: 'post',
                                 json: templateParms ( parms )
                             } ] ) )
@@ -110,7 +111,7 @@ H ( [ P.resolve ( './templateConf.js' ) ] )
                                 return H.wrapCallback ( F.readFile )( parms.filename )
                                     .invoke ( 'toString', [ 'utf8' ] )
                                     .map ( function ( template ) {
-                                        var templateCompiled;
+                                        var templateCompiled, data, stringToSign, sig, s = c.createHash ( 'sha256' );
 
                                         if ( config.data ) {
                                             try {
@@ -122,7 +123,24 @@ H ( [ P.resolve ( './templateConf.js' ) ] )
                                             templateCompiled = template;
                                         }
 
-                                        return R.merge ( queryParms, {
+                                        data = JSON.stringify ( R.merge ( queryParms.json, {
+                                            template: templateCompiled
+                                        } ) );
+
+                                        stringToSign = [
+                                            config.google.client_secret,
+                                            config.google.client_id,
+                                            '/' + R.slice ( 3, Infinity, R.split ( '/', queryParms.url ) ).join ( '/' ),
+                                            R.toUpper ( queryParms.method ),
+                                            data
+                                        ].join ( '' );
+
+                                        I ( stringToSign );
+
+                                        s.update ( new Buffer ( stringToSign ) );
+                                         
+                                        return R.merge ( R.omit ( [ 'url', 'json' ], queryParms ), {
+                                            url: queryParms.url + '?sig=' + s.digest ( 'hex' ),
                                             json: R.merge ( queryParms.json, {
                                                 template: templateCompiled
                                             } )

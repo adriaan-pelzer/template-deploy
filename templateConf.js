@@ -2,6 +2,10 @@
 
 module.exports = {
     test: {
+        google: {
+            client_id: '',
+            client_secret: ''
+        },
         apiUrl: 'http://localhost:5000',
         Omit: [
         ],
