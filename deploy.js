@@ -40,11 +40,13 @@ var B = {
     } )
 };
 
+var cwd = process.argv[3] || './';
+
 if ( process.argv.length < 3 ) {
     usage ( 'too few arguments' );
 }
 
-H ( [ P.resolve ( './templateConf.js' ) ] )
+H ( [ P.resolve ( P.join ( cwd, 'templateConf.js' ) ) ] )
     .flatMap ( function ( configFile ) {
         return H.wrapCallback ( function ( configFile, callBack ) {
             F.exists ( configFile, function ( exists ) {
@@ -61,7 +63,7 @@ H ( [ P.resolve ( './templateConf.js' ) ] )
     .map ( require )
     .map ( R.prop ( process.argv[2] ) )
     .flatMap ( function ( config ) {
-        return H ( [ P.resolve ( './' ) ] )
+        return H ( [ P.resolve ( cwd ) ] )
             .flatMap ( H.wrapCallback ( function ( path, callBack ) {
                 rr ( path, config.Omit || [], callBack );
             } ) )
@@ -79,7 +81,7 @@ H ( [ P.resolve ( './templateConf.js' ) ] )
                 return filename.match ( /\.hbs$/ ) && filename.match ( '/private-assets/' ) && filename.match ( '/templates/' );
             } )
             .flatMap ( function ( filename ) {
-                var pathComponents = R.reject ( R.equals ( '' ), R.split ( P.sep, R.replace ( P.resolve ( './' ), '', filename ) ) );
+                var pathComponents = R.reject ( R.equals ( '' ), R.split ( P.sep, R.replace ( P.resolve ( cwd ), '', filename ) ) );
 
                 return H ( [ {
                     type: pathComponents[0],
