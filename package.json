@@ -1,6 +1,6 @@
 {
   "name": "template-deploy",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Deploy templates by posting them to an API, after running them through handlebars",
   "main": "deploy.js",
   "bin": {
