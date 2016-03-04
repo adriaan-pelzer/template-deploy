@@ -40,7 +40,7 @@ var B = {
     } )
 };
 
-var cwd = process.argv[3] || './';
+var cwd = './';
 
 if ( process.argv.length < 3 ) {
     usage ( 'too few arguments' );
@@ -63,7 +63,7 @@ H ( [ P.resolve ( P.join ( cwd, 'templateConf.js' ) ) ] )
     .map ( require )
     .map ( R.prop ( process.argv[2] ) )
     .flatMap ( function ( config ) {
-        return H ( [ P.resolve ( cwd ) ] )
+        return H ( [ P.resolve ( process.argv[3] || cwd ) ] )
             .flatMap ( H.wrapCallback ( function ( path, callBack ) {
                 rr ( path, config.Omit || [], callBack );
             } ) )
