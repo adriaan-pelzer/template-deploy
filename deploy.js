@@ -91,21 +91,22 @@ H ( [ P.resolve ( P.join ( cwd, 'templateConf.js' ) ) ] )
                 } ] )
                     .flatMap ( function ( parms ) {
                         var templateParms = R.pick ( [ 'type', 'version', 'context' ] );
+                        var apiUrl = ( R.isEmpty ( R.match ( /^http/, config.apiUrl ) ) ? 'http:' : '' ) + config.apiUrl;
 
-                        return H.wrapCallback ( Q )( config.apiUrl + '/templates?type=' + parms.type + '&version=' + parms.version + '&context=' + parms.context )
+                        return H.wrapCallback ( Q )( apiUrl + '/templates?type=' + parms.type + '&version=' + parms.version + '&context=' + parms.context )
                             .pluck ( 'body' )
                             .map ( JSON.parse )
                             .reject ( R.isEmpty )
                             .map ( R.head )
                             .map ( function ( template ) {
                                 return {
-                                    url: config.apiUrl + '/templates/' + template.id,
+                                    url: apiUrl + '/templates/' + template.id,
                                     method: 'put',
                                     json: templateParms ( parms )
                                 };
                             } )
                             .otherwise ( H ( [ {
-                                url: config.apiUrl + '/templates',
+                                url: apiUrl + '/templates',
                                 method: 'post',
                                 json: templateParms ( parms )
                             } ] ) )
