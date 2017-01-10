@@ -82,20 +82,34 @@ H ( [ P.resolve ( P.join ( cwd, 'templateConf.js' ) ) ] )
             } )
             .flatMap ( function ( filename ) {
                 var pathComponents = R.reject ( R.equals ( '' ), R.split ( P.sep, R.replace ( P.resolve ( cwd ), '', filename ) ) );
+                var hasSubcontext = R.type ( pathComponents[3].match ( ':' ) ) === 'Array';
+                var context = R.head ( pathComponents[3].split ( ':' ) );
+                var subcontext = hasSubcontext && R.head ( R.tail ( pathComponents[3].split ( ':' ) ) );
 
                 return H ( [ {
                     type: pathComponents[0],
                     version: R.init ( R.split ( '.', pathComponents[4] ) ).join ( '.' ),
-                    context: pathComponents[3],
+                    context: context,
+                    subcontext: subcontext,
                     filename: filename
                 } ] )
                     .flatMap ( function ( parms ) {
-                        var templateParms = R.pick ( [ 'type', 'version', 'context' ] );
+                        var parmsList = R.concat ( [ 'type', 'version', 'context' ], parms.subcontext ? [ 'subcontext' ] : [] );
+                        var templateParms = R.pick ( parmsList );
                         var apiUrl = ( R.isEmpty ( R.match ( /^http/, config.apiUrl ) ) ? 'http:' : '' ) + config.apiUrl;
 
-                        return H.wrapCallback ( Q )( apiUrl + '/templates?type=' + parms.type + '&version=' + parms.version + '&context=' + parms.context )
-                            .pluck ( 'body' )
-                            .map ( JSON.parse )
+                        return H.wrapCallback ( Q )( {
+                            url: [ apiUrl, 'templates' ].join ( '/' ),
+                            qs: templateParms ( parms ),
+                            json: true
+                        } )
+                            .flatMap ( H.wrapCallback ( ( response, callback ) => {
+                                if ( response.statusCode !== 200 ) {
+                                    return callback ( 'HTTP code ' + response.statusCode + ' returned: ' + JSON.stringify ( response.body ) );
+                                }
+
+                                return callback ( null, response.body );
+                            } ) )
                             .reject ( R.isEmpty )
                             .map ( R.head )
                             .map ( function ( template ) {
