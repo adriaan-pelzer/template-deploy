@@ -22,7 +22,7 @@ var errorIf = function ( pred, error ) {
 
 var usage = function ( msg ) {
     console.log ( msg );
-    console.log ( 'Usage: template-deploy <environment>' );
+    console.log ( 'Usage: template-deploy <environment> [<working_dir>]' );
     process.exit ( 1 );
 };
 
@@ -40,7 +40,7 @@ var B = {
     } )
 };
 
-var cwd = './';
+var cwd = P.resolve ( process.argv[3] || './' );
 
 if ( process.argv.length < 3 ) {
     usage ( 'too few arguments' );
@@ -63,7 +63,7 @@ H ( [ P.resolve ( P.join ( cwd, 'templateConf.js' ) ) ] )
     .map ( require )
     .map ( R.prop ( process.argv[2] ) )
     .flatMap ( function ( config ) {
-        return H ( [ P.resolve ( process.argv[3] || cwd ) ] )
+        return H ( [ cwd ] )
             .flatMap ( H.wrapCallback ( function ( path, callBack ) {
                 rr ( path, config.Omit || [], callBack );
             } ) )
